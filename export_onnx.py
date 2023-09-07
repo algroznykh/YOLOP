@@ -23,7 +23,7 @@ YOLOP = [
     [-1, Conv, [128, 256, 3, 2]],  # 5
     [-1, BottleneckCSP, [256, 256, 3]],  # 6
     [-1, Conv, [256, 512, 3, 2]],  # 7
-    [-1, SPP, [512, 512, [5, 9, 13]]],  # 8 SPP
+    [-1, SPP, [512, 512, [5, 3, 3]]],  # 8 SPP
     [-1, BottleneckCSP, [512, 512, 1, False]],  # 9
     [-1, Conv, [512, 256, 1, 1]],  # 10
     [-1, Upsample, [None, 2, 'nearest']],  # 11
@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
     print(f"Converting to {onnx_path}")
     torch.onnx.export(model, inputs, onnx_path,
-                      verbose=False, opset_version=12, input_names=['images'],
+                      verbose=False, opset_version=9, input_names=['images'],
                       output_names=['det_out', 'drive_area_seg', 'lane_line_seg'])
     print('convert', onnx_path, 'to onnx finish!!!')
     # Checks

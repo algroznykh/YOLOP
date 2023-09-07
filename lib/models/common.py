@@ -148,13 +148,25 @@ class SPP(nn.Module):
 
 class Focus(nn.Module):
     # Focus wh information into c-space
-    # slice concat conv
+    # slice concat conv   # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Focus, self).__init__()
         self.conv = Conv(c1 * 4, c2, k, s, p, g, act)
 
-    def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
-        return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
+    def forward(self, x):  # x(b,c,h,w) -> y(b,4c,h/2,w/2)
+        x0 = F.conv2d(x, torch.ones([3,1,1,1]), stride=2, groups=3)
+        x1 = F.conv2d(F.pad(x, (0, 0, 1, 0), "constant", 0),
+                      torch.ones([3,1,1,1]), stride=2, groups=3)
+        x1 = torch.narrow(x1, 2, 1, x1.size(2) - 1)
+        x2 = F.conv2d(F.pad(x, (1, 0, 0, 0), "constant", 0),
+                      torch.ones([3,1,1,1]), stride=2, groups=3)
+        x2 = torch.narrow(x2, 3, 1, x2.size(3) - 1)
+        x3 = F.conv2d(torch.nn.functional.pad(x, (1, 0, 1, 0), "constant", 0),
+                      torch.ones([3,1,1,1]), stride=2, groups=3)
+        x3 = torch.narrow(x3, 2, 1, x3.size(2) - 1)
+        x3 = torch.narrow(x3, 3, 1, x3.size(3) - 1)
+        return self.conv(torch.cat([x0, x1, x2, x3], 1))
+
 
 
 class Concat(nn.Module):
